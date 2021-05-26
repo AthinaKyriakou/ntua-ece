@@ -1,0 +1,110 @@
+	IN 10H 
+
+	MVI H,0AH 
+	MVI L,FCH 	;(H)(L)<- 0AFCH 
+	MVI M,3EH 	;code for MVI A is 3EH 
+	INX H 
+
+	MVI M,01H 	;?oving 01H to A in order to store it to the flag 
+	INX H 
+	MVI M,32H 	;code for STA is 32H 
+	INX H 
+	MVI M,F0H 
+	INX H 
+	MVI M,0AH 	;The address must be saved with the hex bits in reverse order 
+	INX H 
+	MVI M,C9H 	;code for RET is C9H 
+	INX H 
+	MVI A,00H 	;initializing the flag with 0 
+	STA 0AF0H 
+	MVI A,0DH 	;initializing the mask for interrupt RST 6.5 
+
+
+	SIM 		;sending it to mask interrupt register 
+L0: 
+	EI 		;enable interrupt 
+	LDA 0AF0H 	;load the flag address to A 
+	RAR 		;move the LSB to CY 
+	JNC L0 	;if it is 0, loop to L0 
+
+L1: 
+	DI 		;if it is 1, disable interrupts and run the program 
+	MVI A,00H 	;make flag 0 
+	STA 0AF0H 	;starting address is 0AB0H 
+
+	MVI D,0AH 
+	MVI E,B0H 	;storing starting address in D-E
+ 
+	MVI A,10H 
+	STA 0AB0H 
+	STA 0AB1H 
+
+	STA 0AB2H 
+	STA 0AB3H 
+ 
+	CALL KIND 	;call KIND to get the first digit 
+	MOV B,A 	;store it to B
+	STA 0AB5H 
+	CALL KIND 	;call KIND to get the second digit 
+	STA 0AB4H 
+	PUSH PSW 	;saving all registers in the stack because 
+			;STDM influences all registers 
+	PUSH B 
+	PUSH D 
+	PUSH H 
+	CALL STDM 	;calling STDM 
+	POP H 		;retrieving all registers
+	POP D 
+	POP B 
+	POP PSW 
+	CALL DCD 	;calling DCD to depict the digits 
+	
+	MVI C,64H 	;initialization of C,D,E
+ 
+	MVI D,96H 	 
+	MVI E,C8H 
+
+	RLC 		;A has the second digit read
+	RLC 		;left rotation of A
+	RLC 
+	RLC 
+	ORA B 		;(A)<-(A)OR(B) to get B the first digit
+	RLC 
+	RLC 
+	RLC 
+	RLC 		;fixing the digit order, hex number in A register
+
+			;comparisons
+	MOV B,E 	;K3 in B register
+	CMP B 		;compare A with K3 
+	JC L2 		;if A<K3, go to L2  
+	JZ L2 		;if A=K3, go to L2 
+		 
+	MVI A,F7H 	;else turn ON the 4th LSB LED, (A)<-11110111 
+	JMP L5 	 
+
+L2: 
+	MOV B,D 	;K2 in B register
+	CMP B 		;compare A with K2. 
+	JC L3 		;if A<K2, go to L3 
+	JZ L3 		;if A=K2, go to L3
+			
+	MVI A,FBH 	;else turn ON the 3rd LSB LED, (A)<-11111011
+		 
+	JMP L5 
+ 
+L3: 
+	MOV B,C 	;K1 in B register 
+	CMP B 		;compare A with K1
+	JC L4 		;if A<K1, go to L4 
+	JZ L4 		;if A=K1, go to L4
+			 
+	MVI A,FDH 	;else turn ON the 2nd LSB LED, (A)<-11111101 
+	JMP L5 
+ 
+L4: 
+	MVI A,FEH 	;if A<K1 or A=K1, (A)<-11111110 to turn ON the 1st LSB LED 
+L5: 
+	STA 3000H 	;output in LEDs
+	JMP L0 	;go back to L0, waiting for the next interrupt 
+END 

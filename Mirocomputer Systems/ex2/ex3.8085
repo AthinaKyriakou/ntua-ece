@@ -1,0 +1,94 @@
+	;initializations
+	MVI E,00H	
+	MVI C,03H	;AND_mask in the 2 LSB
+	MVI H,00H	;OR_mask in the 2 LSB
+	MVI D,02H	;counter of the main loop
+
+
+	LDA 2000H	;input from dip switches in register A
+
+L1:
+	;CALCULATING THE OR GATE
+
+	MOV B,A	;storing in B before the changes, changes in A
+	ANA C		;keeping only the last 2 digits
+	CMP H		;compare with the OR_mask
+	JNZ FORM1_OR	;OR output 0 only if 
+	MVI A,00H	;both of the inputs are 0
+	JMP FORM0_OR
+
+FORM1_OR: 
+	MVI A,10H
+
+FORM0_OR: 
+	ORA E	;adding the previous results in A
+	RRC
+	MOV E,A
+	MOV A,B
+	RRC
+	RRC	;calculations in the next 2 LSB
+
+	;CALCULATING THE AND GATE
+
+	MOV B,A
+	ANA C		;keeping only the last 2 digits
+	CMP C		;compare with the AND_mask
+	JZ FORM1_AND	;AND output 1 only if
+	MVI A,00H	;both of the inputs are 1
+	JMP FORM0_AND
+
+FORM1_AND: 
+	MVI A,10H
+
+FORM0_AND:
+	ORA E
+	RRC
+	MOV E,A
+
+	DCR D
+	JZ CONTINUE
+	MOV A,B
+	RRC
+	RRC
+	JMP L1		;repeating the loop twice
+
+
+CONTINUE:
+	
+	MVI H,01H	;XOR_mask1
+	MVI L,02H	;XOR_mask2
+	MVI E,00H
+	MVI C,0CH	;mask to keep bits X3,X2 0000 1100
+	
+	;CALCULATING THE XOR GATE
+
+	MOV B,A	;store the result so far in register B
+	ANI 07H	;0000 0111, A3<-0
+	MOV E,A	
+	MOV A,B	;calculations in register A
+	
+	ANA C		;keeping only the last 2 digits
+	RRC
+	RRC
+	
+	CMP H		;compare with XOR_mask1
+	JZ FORM1_XOR
+	CMP L		;compare with XOR_mask2
+	JZ FORM1_XOR	;XOR output 1 only if
+			;only one of the inputs is 1
+	
+	MVI A,00H
+	JMP FORM0_XOR
+
+FORM1_XOR: MVI A,08H
+
+FORM0_XOR: 
+	ORA E		;final result in register A
+
+	;negative logic of the LEDs
+	CMA		;bitwise complement of A
+			;logic '1'-> ON LED
+			;logic '0'-> OFF LED
+	
+	STA 3000H	;output in LEDS from register A
+	END

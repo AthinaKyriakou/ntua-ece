@@ -1,0 +1,2 @@
+# Advanced Database Systems
+Implementation of Broadcast and Repartition Join algorithms for log processing in MapReduce using Apache Spark RDD API & evaluation of the join algorithms used in SparkSQL DataFrame API for distributed big data analysis. Exercise of the Advanced Database Systems class during the winter semester 2019-2020. 

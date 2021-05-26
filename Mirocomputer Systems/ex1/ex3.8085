@@ -1,0 +1,37 @@
+LDA 2000H   ;input from input ports corresponding to memory address 200H
+MVI B,FFH   ;B register for counting dozens, initialized to -1
+MVI C,FFH   ;C register for counting hundreds, initialized to -1
+
+L1:  ;loop for the hundreds
+INR C
+SUI 64H     ;subtract 100 from the number
+JNC L1
+ADI 64H     ;add 100 to find the modulo
+
+L2: ;loop for the dozens
+INR B
+SUI 0AH    ;subtract 10 from the number
+JNC L2
+ADI 0AH    ;add 10 to find the modulo
+
+;dozens in register B and units in register A
+;total result needs to be in register A
+
+MOV C,A
+MOV A,B 
+
+RLC
+RLC
+RLC
+RLC
+ORI 0FH
+MOV B,A    ;dozens in MSB of register B   
+
+MOV A,C   
+ORI F0H    ;units in LSB of register A
+
+ANA B       ;bitwise AND operation (A)<-(A)AND(B), final result in A
+STA 3000H   ;output in LEDs (memory address 3000H) 
+            ;dozens in MSB, units in LSB
+HLT
+END

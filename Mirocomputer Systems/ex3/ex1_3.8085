@@ -1,0 +1,300 @@
+;go check each line if a button is pressed
+
+IN 10H
+
+INPUT: ;read from the keyboard
+
+	MVI B,07H	
+
+	L1:	
+		MVI A,FEH	;line of INSTR STEP/FETCH PC
+		STA 2800H	;load to scan port, selection of line
+		LDA 1800H	;selection of column
+		
+		ANA B		;keep only the 3 LSB // CONTENT IN REG A
+		
+		CPI 07H	;if no button is pressed from this line
+		JZ L2		;go check the next line
+		
+		;if a button is pressed
+
+		LXI H,09C0H	;09C0H address to save the data to be displayed
+		MVI M,06H	
+		INX H		;addr 09C1
+		MVI M,08H
+		CPI 06H	;INSTR STEP (86) // CONTENT IN REG A	
+		JZ OUTPUT	;OUTPUT ONLY WHEN THIS BUTTON IS PRESSED
+		
+		LXI H,09C0H
+		MVI M,05H	
+		INX H		;addr 09C1
+		MVI M,08H
+		CPI 05H	;FETCH PC (85)
+		JZ OUTPUT
+
+	
+	L2:	
+		MVI A,FDH	;line of RUN/FETCH REG/FETCH ADRS
+		STA 2800H
+		LDA 1800H	;selection of column
+		
+		ANA B		;keep only the 3 LSB // CONTENT IN REG A
+		
+		CPI 07H	;if no button is pressed from this line
+		JZ L3		
+		
+		;if a button is pressed
+
+		LXI H,09C0H
+		MVI M,04H	
+		INX H		;addr 09C1
+		MVI M,08H
+		CPI 06H	;RUN (84)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,00H	
+		INX H		;addr 09C1
+		MVI M,08H
+		CPI 05H	;FETCH REG (80)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,02H	
+		INX H		;addr 09C1
+		MVI M,08H
+		CPI 03H	;FETCH ADRS (82)
+		JZ OUTPUT	
+
+
+	L3:
+		MVI A,FBH	;line of 0/STORE INCR/INCR
+		STA 2800H
+		LDA 1800H	;selection of column
+		
+		ANA B		;keep only the 3 LSB
+		
+		CPI 07H	;if no button is pressed from this line
+		JZ L4		
+		
+		;if a button is pressed
+		
+		LXI H,09C0H
+		MVI M,00H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 06H	;0 (00)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,03H	
+		INX H		;addr 09C1
+		MVI M,08H
+		CPI 05H	;STORE/INCR (83)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,01H	
+		INX H		;addr 09C1
+		MVI M,08H
+		CPI 03H	;DCR (81)
+		JZ OUTPUT
+
+
+	L4:	
+		MVI A,F7H	;line of 1/2/3
+		STA 2800H
+		LDA 1800H	;selection of column
+		
+		ANA B		;keep only the 3 LSB
+		
+		CPI 07H	;if no button is pressed from this line
+		JZ L5		
+		
+		;if a button is pressed
+
+		LXI H,09C0H
+		MVI M,01H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 06H	;1 (01)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,02H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 05H	;2 (02)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,03H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 03H	;3 (03)
+		JZ OUTPUT
+
+
+	L5:	
+		MVI A,EFH	;line of 4/5/6
+		STA 2800H
+		LDA 1800H	;selection of column
+		
+		ANA B		;keep only the 3 LSB
+		
+		CPI 07H	;if no button is pressed from this line
+		JZ L6		
+		
+		;if a button is pressed
+
+		LXI H,09C0H
+		MVI M,04H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 06H	;4 (04)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,05H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 05H	;5 (05)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,06H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 03H	;6 (06)
+		JZ OUTPUT
+	
+
+	L6:	
+		MVI A,DFH	;line of 7/8/9
+		STA 2800H
+		LDA 1800H	;selection of column
+		
+		ANA B		;keep only the 3 LSB
+		
+		CPI 07H	;if no button is pressed from this line
+		JZ L7		
+		
+		;if a button is pressed
+
+		LXI H,09C0H
+		MVI M,07H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 06H	;7 (07)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,08H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 05H	;8 (08)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,09H	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 03H	;9 (09)
+		JZ OUTPUT
+
+
+	L7:	
+		MVI A,BFH	;line of A/B/C
+		STA 2800H
+		LDA 1800H	;selection of column
+		
+		ANA B		;keep only the 3 LSB
+		
+		CPI 07H	;if no button is pressed from this line
+		JZ L8		
+		
+		;if a button is pressed
+
+		LXI H,09C0H
+		MVI M,0AH	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 06H	;A (0A)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,0BH	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 05H	;B (0B)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,0CH	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 03H	;C (0C)
+		JZ OUTPUT
+
+
+	L8:	
+		MVI A,7FH	;line of D/E/F
+		STA 2800H
+		LDA 1800H	;selection of column
+		
+		ANA B		;keep only the 3 LSB
+		
+		CPI 07H	;if no button is pressed from this line
+		JZ INPUT	;if all checked loopINPUT
+		
+		;if a button is pressed
+
+		LXI H,09C0H
+		MVI M,0DH	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 06H	;D (0D)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,0EH	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 05H	;E (0E)
+		JZ OUTPUT
+
+		LXI H,09C0H
+		MVI M,0FH	
+		INX H		;addr 09C1
+		MVI M,00H
+		CPI 03H	;F (0F)
+		JZ OUTPUT
+
+
+OUTPUT:
+	;make the first 4 digits of the 7segment display blank
+	
+	MVI B,FFH	;counter for the DCD loop 
+			
+	LXI H,09C2H
+	MVI M,10H	;code of blank for DCD is 10H
+	INX H		;addr 09C3
+	MVI M,10H
+	INX H		;addr 09C4
+	MVI M,10H
+	INX H		;addr 09C5
+	MVI M,10H
+
+	LXI D,09C0H
+	CALL STDM
+	DCD_LOOP:
+		CALL DCD
+		DCR B
+		JNZ DCD_LOOP
+		JMP INPUT	;input displayed, go read again 
+END
+		
+	
+	
+
+			

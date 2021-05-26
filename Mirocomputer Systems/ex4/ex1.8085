@@ -1,0 +1,136 @@
+IN 10H
+
+MVI A,FFH		;at first all light are off
+STA 3000H
+MVI H,0AH		;in 0AFCH we store the supplementary program
+MVI L,FCH		;a flag will be used: if flag==1, the interrupt button has been pressed
+MVI A,00H
+STA 0AF0H		;flag=0
+
+INTERRUPT:		;makes falg=1 and returns to our program
+	MVI M,03H
+	INX H
+	MVI M,01H
+	MVI M,32H
+	INX H
+	MVI M,F0H
+	INX H
+	MVI M,0AH 	;store the flag
+	INX H
+	MVI M,C9H	;RET code is C9H
+	INX H
+
+MVI A,0DH
+SIM
+
+LOOP1:
+	EI		;enable interrupts
+	LDA	0AF0H
+	RAR		;if the flag is 1 continue
+	JNC LOOP1	;else re-do the loop
+
+LOOP2:
+	DI		;disable interrupts
+	MVI A,00H	;annul the flag
+	STA 0AF0H
+	MVI B,00H
+	MVI C,64H	;time stored for DELB - 100ms. We need 1 minute = 60*1000ms=6000ms.
+			;6000/200=300 periods = 012H
+	MVI H,01H	;store in H-L	
+	MVI L,2CH
+	MVI A,00H
+	STA 0AE0H	;initialize timer in  0AE0H - MSB
+	STA 0AE1H	;LSB
+			;store the message in 0AB0H
+	MVI A,10H	;set as 10H (blank) the 4 most-left digits
+	STA 0AB2H
+	STA 0AB3H
+	STA 0AB4H
+	STA 0AB5H
+	
+	MVI A,05H	;initialiaze the counter in 0AE2 
+	STA 0AE2H
+
+MVI D,0AH	;initialize D-E for STDM
+MVI E,B0H	
+
+MAINLOOP:		
+	LDA 0AE1H	;loading the LSD of the timer to A
+	STA 0AB0H
+	LDA 0AE0H	;same for MSB
+	STA 0AB1H
+			;saving registers contents
+	PUSH PSW	
+	PUSH B
+	PUSH D
+	PUSH H
+
+	CALL STDM	
+			;retrieving register contenets
+	POP H
+	POP D
+	POP B
+	POP PSW
+
+CALL DCD
+MVI A,00H
+STA 3000H	;lights on
+
+CALL DELB
+CALL DCD	;100ms have passed since the last DCD call
+
+MVI A,FFH
+STA 3000H	;lights off
+
+EI		;enable interrupts
+LDA 0AF0H
+RAR		;check  if there’s another interrupt
+JC LOOP2
+
+DI			;disable interrupts
+LDA 0AE2H
+DCR A
+
+JNZ SMTHG		;if it’s zero set counter to 05h and increase timer by one
+
+MVI A,05H
+STA 0AE2H		;set counter back to 5
+
+LDA 0AE1H
+CPI 09H		;if it;s less than 9, go to SMTHG2
+JC SMTHG2		;else, LSB=0, MSB+=1
+
+MVI A,00H
+STA 0AE1H		;timer: LSB=0
+
+LDA 0AE0H		;load to the MSB of the timer
+INR A
+STA 0AE0H		;store the increased MSB
+
+JMP SMTHG3		;jump there in order to avoid instructions that would happen
+			;if counter=0
+
+SMTHG:		;saves A back to the counter address
+	STA 0AE2H
+	JMP SMTHG3
+
+SMTHG2:		;if timer LSB < 9
+	LDA 0AE1H
+	INR A
+	STA 0AE1H
+
+SMTHG3:		;
+	DCX H		;reduce H-L by one
+	MOV A,L
+	CPI 00H	
+	JNZ MAINLOOP	; if L’s contents are 0, do next period
+	MOV A,H	;check H’s contents
+	MOV A,H
+	CPI 00H
+	JNZ MAINLOOP	; if H’s contents are 0, do next period
+
+MVI A,00H
+STA 0AF0H
+JMP LOOP1		;in case the interrupt button is pressed right after the last period and right
+			;Before coming back (thus we have to make flag=0)
+END

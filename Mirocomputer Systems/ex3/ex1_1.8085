@@ -1,0 +1,40 @@
+LOOP_EXT:
+	IN 10H
+
+	MVI B,FFH	;initialize register B to 1111 1111 (result)
+	MVI C,80H	;initialize register C to 1000 0000 (mask)
+	LDA 2000H	;input from dip switches in register A
+
+
+	L1:	
+
+		MOV D,A	;(D)<-(A)
+		ANA C		;(A)<-(A) AND (C)
+		JZ FINAL	;if (A)=0, zero is found
+		
+		;if first zero is not yet found
+		MOV A,B
+		STC		;CY=1
+		CMC		;CY=0
+		RAR		;CY=1
+		MOV B,A	;LATEST RESULT
+	
+		MOV A,C	
+		CMC		;CY=0
+		RAR		;CY=0
+		CPI 00H	;compare new mask with zero
+		JZ FINAL	;if it is zero, we have checked all the bits
+		MOV C,A	;LATEST MASK
+
+		MOV A,D
+		JP L1
+
+	;to the final loop if a zero is found or we have checked all the bits
+
+	FINAL:	
+
+		MOV A,B
+		CMA
+		STA 3000H	;output in LEDs
+		JP LOOP_EXT
+END

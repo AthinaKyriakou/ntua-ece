@@ -1,0 +1,96 @@
+IN 10H		
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;storing the numbers in memory
+;counting the numbers between [20H,70H], result in C
+
+LXI H,0900H		;starting address
+MVI A,FFH		;(A)=255
+
+MVI B,20H		;(A)>=32=(20H)
+MVI D,71H		;(A)=<112=(70H)
+MVI C,00H		;C initialized to 0
+
+LOOP1:
+	MOV M,A
+
+COMPR:
+	CMP D
+	JNC CONT1	;if (A)>=71H => CY=0, CONTINUE
+	CMP B
+	JC CONT1 	;if (A)<20H => CY=1, CONTINUE
+	INR C
+
+CONT1: 
+	INX H		;next address
+	DCR A		;decrease the input until reaching zero
+	JNZ LOOP1	;if it is not zero
+
+MOV M,A		;adding zero
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;counting the number of zeros, result in registers D,E
+
+LXI H,0900H		;starting address
+MVI D,00H
+MVI E,00H		;counter of zeros in D-E
+
+MOV A,M
+
+LOOP2: ;looping for all the addresses
+	MVI B,08H		;B is the counter, 8 times repetition
+
+SUB_LOOP: ;looping for 8 times
+	RRC			;right shift so that (CY)<-(A0)
+	JC CONT2		;if CY=1, continue
+	INX D			;if CY=0, augment the counter of zeros
+	
+CONT2:
+	DCR B
+	JNZ SUB_LOOP
+	INX H			;show to the next address
+	MOV A,M		;the next number to be processed
+	CPI 00H		;check if zero is reached
+	JZ CONT3
+	JMP LOOP2		
+	
+CONT3:	MVI B,08H	
+
+EXIT: ;when the result is zero, increase the D-E by 8zeros and exit
+	INX D
+	DCR B
+	JNZ EXIT
+
+;;;;;;;;;;;;;; RESULTS - OUTPUT ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+;D-E number of zeros
+;C numbers in [20H,70H]
+
+LDA 2000H		;input from dip switches in register A
+MVI B,06H		;B is the counter, 6 times repetition
+
+LOOP3: ;6 right shifts needed
+	RRC
+	DCR B
+	JNZ LOOP3
+	JNC OUT_E	;if the 6th switch is LOW, check if the 7th is HIGH
+
+OUT_C:
+	MOV A,C
+	JMP FINAL
+
+OUT_E:
+	RRC
+	JNC OUT_D	;if the 7th is LOW, check if the 8th is HIGH
+	MOV A,E
+	JMP FINAL	
+OUT_D:
+	RRC 		;assume that there is always an input from dip switches
+	MOV A,D
+	JMP FINAL
+
+FINAL: 
+	STA 3000H
+	END
+
+

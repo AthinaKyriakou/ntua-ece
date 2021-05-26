@@ -1,0 +1,78 @@
+LOOP_EXT:
+	IN 10H
+	MVI C,00H
+
+	CHECK:
+		CALL KIND	;check if 0-8 is pressed, in register A
+		
+		MVI B,00H	;B is the temp register
+		CMP C		;compare input with 0 button
+		JZ FINAL
+
+		MVI B,01H
+		INR C
+		CMP C		;compare input with 1
+		JZ FINAL
+
+		MVI B,02H
+		INR C
+		CMP C		;compare input with 2
+		JZ FINAL
+
+		MVI B,04H
+		INR C
+		CMP C		;compare input with 3
+		JZ FINAL
+
+		MVI B,08H
+		INR C
+		CMP C		;compare input with 4
+		JZ FINAL
+
+		MVI B,10H
+		INR C
+		CMP C		;compare input with 5
+		JZ FINAL
+
+		MVI B,20H
+		INR C
+		CMP C		;compare input with 6
+		JZ FINAL
+
+		MVI B,40H
+		INR C
+		CMP C		;compare input with 7
+		JZ FINAL
+
+		INR C
+		CMP C		;compare input with 8
+		JZ COUNTER
+
+		JMP LOOP_EXT	;if none of them is pressed, call KIND again		
+
+
+	COUNTER: MVI C,FFH	;counter to repeat the flash routine for the 
+				;LED's blinking
+
+	FLASH:			;LED's blinking
+		MVI A,00H
+		STA 3000H
+		NOP
+		NOP
+		NOP
+		MVI A,FFH
+		STA 3000H
+		NOP
+		NOP
+		NOP
+		DCR C
+		JNZ FLASH
+		JMP LOOP_EXT
+
+	FINAL:
+		MOV A,B
+		CMA
+		STA 3000H
+		JMP LOOP_EXT
+
+END	
